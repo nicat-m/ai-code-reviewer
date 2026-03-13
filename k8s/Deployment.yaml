@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: bot
-          image: maven.e-taxes.gov.az:48083/gitlab-ai-review-bot:<VERSION>
+          image: <your-registry>/gitlab-ai-review-bot:<VERSION>
           imagePullPolicy: IfNotPresent
 
           ports:

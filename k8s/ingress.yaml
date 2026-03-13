@@ -5,7 +5,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: ai-code-review.vn.local
+  - host: ai-code-review.local
     http:
       paths:
       - backend:
