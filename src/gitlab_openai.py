@@ -35,31 +35,28 @@ def load_prompt(file_path):
 
 def parse_first_new_line(diff_content):
     """
-    Diff mətni daxilindən ilk əlavə edilmiş (+) sətirin nömrəsini tapır.
+    Parses the first new line number from the diff content.
     """
     lines = diff_content.split('\n')
     current_new_line = 0
     
     for line in lines:
-        # Hunk header-i tapırıq: @@ -1,4 +15,6 @@
         if line.startswith('@@'):
             match = re.search(r'\+(\d+)', line)
             if match:
                 current_new_line = int(match.group(1)) - 1
             continue
         
-        # Əgər sətir dəyişməyibsə və ya yeni əlavədirsə sətir sayını artır
         if not line.startswith('-'):
             current_new_line += 1
             
-        # İlk yeni əlavə edilmiş sətiri tapdıqda onun nömrəsini qaytar
         if line.startswith('+') and not line.startswith('+++'):
             return current_new_line
             
     return 1
 
 def check_if_already_reviewed(mr, file_path, sha):
-    """Fayl və SHA əsasında təkrar rəy yoxlaması."""
+    """File and SHA patterns in discussions to avoid duplicate reviews."""
     try:
         discussions = mr.discussions.list(get_all=True)
         search_pattern = f"`{file_path}`"
@@ -123,13 +120,11 @@ def process_webhook(payload):
             new_path = ch.get("new_path")
             diff_text = ch.get("diff")
 
-            # Filtrasiya
             if (ch.get("deleted_file") or not new_path or 
                 not any(new_path.endswith(ext) for ext in ALLOWED_EXT) or 
                 not diff_text or not diff_text.strip()):
                 continue
 
-            # Təkrar yoxlaması
             if check_if_already_reviewed(mr, new_path, last_commit_sha):
                 print(f"Already reviewed: {new_path}")
                 continue
@@ -149,7 +144,6 @@ def process_webhook(payload):
                 #f"SHA: {last_commit_sha}"
             )
 
-            # Changes bölməsində şərh yaratmağa cəhd (Discussion)
             try:
                 mr.discussions.create({
                     'body': comment_body,
@@ -166,7 +160,6 @@ def process_webhook(payload):
                 print(f"Successfully commented on {new_path} at line {target_line}")
                 reviewed_any = True
             except Exception as diff_err:
-                # Əgər 400 xətası verərsə (sətir tapılmazsa), fallback olaraq Overview-a yaz
                 print(f"Diff error for {new_path}: {diff_err}. Falling back to general note.")
                 mr.notes.create({'body': comment_body})
                 reviewed_any = True
@@ -174,7 +167,6 @@ def process_webhook(payload):
             time.sleep(1)
 
         if reviewed_any:
-            # Etiket əlavə et
             labels = mr.labels or []
             if "AI-reviewed" not in labels:
                 labels.append("AI-reviewed")
