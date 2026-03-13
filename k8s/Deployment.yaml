@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-ai-review-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab-ai-review-bot
+  template:
+    metadata:
+      labels:
+        app: gitlab-ai-review-bot
+    spec:
+      containers:
+        - name: bot
+          image: maven.e-taxes.gov.az:48083/gitlab-ai-review-bot:<VERSION>
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5000
+
+          envFrom:
+            - secretRef:
+                name: ai-review-bot-secret
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /docs
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+
+          readinessProbe:
+            httpGet:
+              path: /docs
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-ai-review-bot
+spec:
+  selector:
+    app: gitlab-ai-review-bot
+  ports:
+    - port: 80
+      targetPort: 5000
+  type: ClusterIP
+
+

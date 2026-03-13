@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-code-review-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ai-code-review.vn.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: gitlab-ai-review-bot
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
